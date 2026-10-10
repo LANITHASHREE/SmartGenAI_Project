@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartGen AI</title>
+{% raw %}
+<style>
+  :root {
+    --bg:#f5f7fb; --card:#ffffff; --ink:#1d2433; --muted:#667085; --line:#e3e8f0;
+    --brand:#3b5bdb; --brand-ink:#ffffff; --good:#2f9e6b; --bad:#d9534f; --note:#eef3ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f131c; --card:#171c28; --ink:#e8ecf4; --muted:#93a0b8; --line:#283043; --brand:#6c8cff; --brand-ink:#0f131c; --note:#1b2440; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height:1.45; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display:flex; align-items:center; gap:12px; margin-bottom:4px; }
+  .logo { width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg,var(--brand),#9b6bff); display:grid; place-items:center; font-size:22px; }
+  h1 { margin:0; font-size:26px; letter-spacing:-.02em; }
+  .sub { color:var(--muted); margin:2px 0 14px; }
+  .tabs { display:flex; gap:6px; margin:6px 0 14px; border-bottom:1px solid var(--line); }
+  .tab { background:transparent; color:var(--muted); border:0; border-bottom:3px solid transparent; border-radius:0; padding:10px 14px; font-weight:700; }
+  .tab[aria-selected="true"] { color:var(--ink); border-bottom-color:var(--brand); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin:16px 0; }
+  h2 { margin:0 0 12px; font-size:17px; }
+  .field { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  input[type=text] { flex:1 1 320px; }
+  input, select, button { font:inherit; padding:10px 12px; border-radius:9px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  button { background:var(--brand); color:var(--brand-ink); border:0; cursor:pointer; font-weight:600; }
+  button.ghost { background:transparent; color:var(--brand); border:1px solid var(--brand); }
+  button.small { padding:6px 10px; font-size:13px; }
+  button:disabled { opacity:.55; cursor:wait; }
+  button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline:3px solid var(--brand); outline-offset:2px; }
+  .check { display:flex; align-items:center; gap:6px; font-size:14px; color:var(--muted); }
+  .check input { width:18px; height:18px; padding:0; }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 0; }
+  .chip { background:var(--note); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:500; }
+  .reason { background:var(--note); border-left:4px solid var(--brand); padding:10px 14px; border-radius:6px; margin:14px 0; }
+  .estimate-panel { border:1px solid var(--line); border-radius:14px; padding:18px; margin-top:16px; background:linear-gradient(145deg,var(--card),var(--note)); }
+  .estimate-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+  .estimate-top h3 { margin:0 0 5px; font-size:18px; }
+  .estimate-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:16px 0; }
+  .estimate-kpi { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:12px; min-width:0; }
+  .estimate-kpi span { display:block; color:var(--muted); font-size:12px; margin-bottom:7px; }
+  .estimate-kpi strong { display:block; font-size:20px; letter-spacing:-.5px; overflow-wrap:anywhere; }
+  .estimate-kpi small { display:block; color:var(--muted); font-size:11px; margin-top:4px; }
+  .estimate-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  .estimate-actions button { min-height:42px; }
+  @media(max-width:640px){.estimate-grid{grid-template-columns:1fr 1fr}.app-header{align-items:flex-start}.app-header form{flex-direction:column;align-items:flex-end;gap:6px}.signed-in{max-width:150px;text-align:right}}
+  .badge { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; color:#fff; margin-right:6px; }
+  .badge.lib { background:#2b7bb9; } .badge.df { background:var(--brand); } .badge.dir { background:#667085; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:700px) { .cols { grid-template-columns:1fr; } }
+  .tag { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; color:#fff; margin-bottom:8px; }
+  .tag.good { background:var(--good); } .tag.bad { background:var(--bad); }
+  .how { margin-top:14px; background:#f4f8ff; border:1px solid #cfdcf7; border-radius:10px; padding:10px 14px; }
+  .how summary { cursor:pointer; font-weight:700; color:#27408b; }
+  .how ol { margin:8px 0 0 18px; padding:0; font-size:13px; line-height:1.55; color:#334; }
+  .draftsave { font-weight:700; color:#1a7f4b; margin:6px 0 0; }
+  .method td:first-child { font-weight:600; white-space:nowrap; }
+  img.out { width:100%; height:auto; border:1px solid var(--line); border-radius:10px; background:#fff; }
+  .draftbox { display:grid; grid-template-columns:240px 1fr; gap:18px; align-items:start; }
+  @media (max-width:640px) { .draftbox { grid-template-columns:1fr; } }
+  .draftbox img { width:100%; max-width:240px; }
+  .btnrow { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  dl { margin:10px 0 0; display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:14px; }
+  dt { color:var(--muted); } dd { margin:0; font-weight:600; }
+  .bars { margin-top:16px; }
+  .barrow { margin:8px 0; }
+  .barlabel { font-size:13px; color:var(--muted); display:flex; justify-content:space-between; margin-bottom:3px; }
+  .track { height:20px; background:var(--line); border-radius:6px; overflow:hidden; }
+  .fill { height:100%; border-radius:6px; transition:width .5s ease; }
+  .fill.good { background:var(--good); } .fill.bad { background:var(--bad); }
+  .big { font-size:30px; font-weight:800; color:var(--good); margin:10px 0 0; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media (max-width:760px) { .grid4 { grid-template-columns:1fr 1fr; } }
+  .kpi { background:var(--note); border-radius:10px; padding:12px; }
+  .kpi b { display:block; font-size:22px; } .kpi span { font-size:12px; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; }
+  .rh { margin:18px 0 6px; font-size:15px; }
+  table.res td:nth-child(n+2), table.res th:nth-child(n+2) { text-align:right; }
+  table.res td:last-child { color:var(--good); font-weight:700; }
+  #err { color:var(--bad); margin-top:8px; min-height:1.2em; }
+  .muted { color:var(--muted); font-size:13px; }
+  .layers { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:6px; }
+  @media (max-width:760px) { .layers { grid-template-columns:1fr 1fr; } }
+  .layer { border:1px solid var(--line); border-radius:10px; padding:10px; font-size:13px; }
+  .layer b { display:block; margin-bottom:2px; }
+
+  /* ---------- District dashboard: always dark, like a control room ---------- */
+  .stage { background:#0b1020; color:#e8ecf7; border-radius:18px; padding:20px; border:1px solid #1d2745; }
+  .stage h2 { color:#e8ecf7; }
+  .stage .muted { color:#93a0c0; }
+  .stage label { font-size:13px; color:#b7c2de; display:flex; flex-direction:column; gap:4px; min-width:170px; flex:1; }
+  .stage label b { color:#fff; }
+  .stage input[type=range] { padding:0; accent-color:#6c8cff; background:transparent; border:0; }
+  .stage button { background:#6c8cff; color:#0b1020; }
+  .stage button.ghost { background:transparent; color:#9db4ff; border:1px solid #3a4a80; }
+  .stage select { background:#121a33; color:#e8ecf7; border:1px solid #2a3760; }
+  .controls { display:flex; flex-wrap:wrap; gap:16px; align-items:end; }
+  .hero { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:18px 0; }
+  @media (max-width:860px) { .hero { grid-template-columns:repeat(2,1fr); } }
+  .hk { background:linear-gradient(160deg,#131c38,#0f1730); border:1px solid #243158; border-radius:14px; padding:14px; }
+  .hk b { display:block; font-size:28px; letter-spacing:-.02em; color:#7dffc1; font-variant-numeric:tabular-nums; }
+  .hk span { font-size:12px; color:#9fb0d6; }
+  .hk.pct b { color:#ffd166; }
+  .panel { background:#0f1730; border:1px solid #243158; border-radius:14px; padding:14px; margin-top:14px; }
+  .panel h3 { margin:0 0 8px; font-size:15px; color:#dfe7ff; }
+  canvas { width:100%; display:block; }
+  #chart { height:340px; } #grid { height:230px; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:#b7c2de; margin-top:6px; }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  .twocol { display:grid; grid-template-columns:3fr 2fr; gap:14px; }
+  @media (max-width:860px) { .twocol { grid-template-columns:1fr; } }
+  .stack { display:flex; height:30px; border-radius:8px; overflow:hidden; margin:8px 0; background:#1a2447; }
+  .stack div { height:100%; min-width:2px; transition:width .8s ease; }
+  .why { font-size:13px; color:#b7c2de; margin:4px 0; }
+  .why i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; }
+  .stage table th { color:#93a0c0; } .stage th, .stage td { border-bottom:1px solid #1f2a4f; }
+  .daylabel { font-variant-numeric:tabular-nums; color:#cdd8f5; font-weight:700; }
+  .reveal { opacity:0; transform:translateY(8px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.on { opacity:1; transform:none; }
+  @media (prefers-reduced-motion: reduce) { .reveal, .fill, .stack div { transition:none; } }
+</style>
+{% endraw %}
+</head>
+<body>
+<div class="wrap">
+  <header class="app-header">
+    <div class="brand-lockup"><div class="logo" aria-hidden="true">✦</div><div><h1>SmartGen AI</h1><p class="brand-caption">Resource-aware image workspace</p></div></div>
+    <form method="post" action="/logout"><span class="signed-in">Signed in · {{ session.get('smartgen_user', 'User') }}</span><button class="ghost logout-btn" type="submit">Sign out</button></form>
+  </header>
+  <p class="sub">Create purpose-fit visuals with transparent energy, time and electricity-cost estimates — before you approve generation.</p>
+
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tab-create" aria-selected="true" aria-controls="panel-create">Create a picture</button>
+    <button class="tab" role="tab" id="tab-dash" aria-selected="false" aria-controls="panel-dash">District dashboard</button>
+  </div>
+
+  <!-- ===================== CREATE ===================== -->
+  <div id="panel-create" role="tabpanel" aria-labelledby="tab-create">
+    <section class="card" aria-labelledby="h-gen">
+      <h2 id="h-gen">1. Describe your picture</h2>
+      <div class="field">
+        <input type="text" id="prompt" maxlength="300" placeholder="e.g. Butterfly coloring worksheet for children" aria-label="Describe the picture">
+        <select id="purpose" aria-label="Purpose">
+          <option value="auto">Auto-detect purpose</option>
+          {% for key, p in presets.items() %}<option value="{{ key }}">{{ p.label }}</option>{% endfor %}
+        </select>
+        <button id="genBtn">Estimate resources</button>
+      </div>
+      <div class="chips" aria-label="Examples">
+        <button class="chip" data-p="Butterfly coloring worksheet for children">🦋 Coloring sheet</button>
+        <button class="chip" data-p="Alphabet flashcard: S for star">⭐ Flashcard</button>
+        <button class="chip" data-p="Annual report poster with a tree and the sun">🌳 Poster</button>
+      </div>
+      <div id="err" role="alert"></div>
+
+      <div id="estimatePanel" class="estimate-panel" hidden aria-live="polite">
+        <div class="estimate-top"><div><span class="tag good">Estimate only · No image created</span><h3>Resource estimate for your prompt</h3><p class="muted" id="estimateReason"></p></div><span class="tag bad" id="estimatePurpose"></span></div>
+        <div class="estimate-grid">
+          <div class="estimate-kpi"><span>Estimated energy</span><strong id="estEnergy">—</strong><small id="estEnergyMax">Maximum quality: —</small></div>
+          <div class="estimate-kpi"><span>Estimated time</span><strong id="estTime">—</strong><small id="estTimeMax">Maximum quality: —</small></div>
+          <div class="estimate-kpi"><span>Estimated electricity cost</span><strong id="estCost">—</strong><small id="estCostMax">Maximum quality: —</small></div>
+          <div class="estimate-kpi"><span>Compute usage</span><strong id="estCompute">—</strong><small id="estComputeMax">Maximum quality: —</small></div>
+          <div class="estimate-kpi"><span>Estimated CO₂</span><strong id="estCo2">—</strong><small id="estCo2Max">Maximum quality: —</small></div>
+          <div class="estimate-kpi"><span>Equivalent phone charge</span><strong id="estPhone">—</strong><small>Based on an illustrative 15 Wh phone charge</small></div>
+        </div>
+        <p class="muted" id="estimateSavings"></p><p class="muted">Estimates use a configurable electricity tariff and compute-based model; they are not live power-meter readings or actual AI-provider charges.</p>
+        <div class="estimate-actions"><button id="approveBtn" type="button">✓ OK, generate image</button><button class="ghost" id="againBtn" type="button">No, edit prompt</button></div>
+      </div>
+
+      <!-- legacy draft panel kept hidden for backwards-compatible markup -->
+      <div id="draftPanel" hidden>
+        <div class="reason" id="draftReason"></div>
+        <div class="draftbox">
+          <div>
+            <span class="tag good" id="draftTag">Draft</span>
+            <img class="out" id="draftImg" alt="Low-energy draft preview">
+          </div>
+          <div>
+            <p><b id="draftLine"></b></p>
+            <p class="muted" id="draftCompare"></p>
+            <p class="muted" id="draftNext"></p>
+            <p class="draftsave" id="draftSave"></p>
+            <p class="muted small" id="draftHow"></p>
+            <div class="btnrow">
+              <button id="legacyApproveBtn" type="button">✓ Looks right, make the final picture</button>
+              <button class="ghost" id="legacyAgainBtn" type="button">↻ Try another draft</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- final result -->
+      <div id="result" hidden>
+        <div class="reason"><span class="badge" id="srcBadge"></span><span id="reason"></span><div class="muted" id="note" style="margin-top:6px"></div></div>
+        <div class="cols">
+          <div>
+            <span class="tag good">Smart mode (used)</span>
+            <img class="out" id="img" alt="Generated picture using smart settings">
+            <dl>
+              <dt>Purpose</dt><dd id="rp"></dd>
+              <dt>Mode</dt><dd id="rm"></dd>
+              <dt>Size / steps</dt><dd id="rs"></dd>
+            </dl>
+            <p><a id="dl" download="smartgen.png"><button class="ghost small" type="button">⬇ Download image</button></a></p>
+          </div>
+          <div>
+            <span class="tag bad" id="baseTag">Full quality (not needed)</span>
+            <img class="out" id="baseImg" alt="Same prompt at full poster settings">
+            <p class="muted">Same prompt at poster settings, shown only so you can compare.</p>
+            <button class="ghost" id="upBtn" type="button">Need higher quality? Use poster settings</button>
+          </div>
+        </div>
+        <h3 class="rh">Energy receipt for this picture</h3>
+        <table class="res" aria-label="Resource estimate">
+          <thead><tr><th></th><th>Smart mode (used)</th><th>Maximum quality</th><th>Saved</th></tr></thead>
+          <tbody>
+            <tr><td>Time (estimated)</td><td id="r-t1"></td><td id="r-t2"></td><td id="r-t3"></td></tr>
+            <tr><td>Compute (relative)</td><td id="r-c1"></td><td id="r-c2"></td><td id="r-c3"></td></tr>
+            <tr><td>Energy</td><td id="r-e1"></td><td id="r-e2"></td><td id="r-e3"></td></tr>
+            <tr><td>CO&#8322; (approx.)</td><td id="r-o1"></td><td id="r-o2"></td><td id="r-o3"></td></tr>
+          </tbody>
+        </table>
+        <div class="bars">
+          <div class="barrow"><div class="barlabel"><span>Maximum quality</span><span id="bc"></span></div><div class="track"><div class="fill bad" id="bb" style="width:100%"></div></div></div>
+          <div class="barrow"><div class="barlabel"><span>Smart mode</span><span id="sc"></span></div><div class="track"><div class="fill good" id="sb" style="width:0"></div></div></div>
+          <p class="big" id="saved"></p>
+          <p class="muted" id="measuredLine"></p>
+        </div>
+        <details class="how" id="howBox" open>
+          <summary>How was this estimate calculated?</summary>
+          <ol id="howList"></ol>
+        </details>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-live">
+      <h2 id="h-live">2. Live savings from this session</h2>
+      <div class="grid4">
+        <div class="kpi"><b id="k-req">0</b><span>pictures made</span></div>
+        <div class="kpi"><b id="k-save">0%</b><span>less energy than always-maximum</span></div>
+        <div class="kpi"><b id="k-cost">0 Wh</b><span>energy saved (<span id="k-co2">0</span> g CO&#8322;)</span></div>
+        <div class="kpi"><b id="k-reuse">0 / 0</b><span>reused from library / drafts made</span></div>
+      </div>
+      <p class="muted">Updates after every picture. <button class="ghost small" id="resetBtn" type="button">Reset</button></p>
+    </section>
+
+    <section class="card method" aria-labelledby="h-method">
+      <h2 id="h-method">How we estimate cost (methodology)</h2>
+      <p class="muted">Every picture shows an estimated cost and the saving versus the maximum setting
+        (<b>{{ presets.poster.label }}, {{ presets.poster.size }}px, {{ presets.poster.steps }} steps</b>, what the district used for every request).
+        We cannot meter the GPU, so the numbers come from one transparent formula, applied the same way to smart and maximum:</p>
+      <table>
+        <tbody>
+          <tr><td>Compute units</td><td>(size &divide; 512)&sup2; &times; steps &nbsp;&nbsp;<span class="muted">(maximum picture = {{ "%g"|format(method.max_units) }} units)</span></td></tr>
+          <tr><td>Energy (Wh)</td><td>units &times; {{ "%.4f"|format(method.wh) }} Wh &nbsp;&nbsp;<span class="muted">calibrated: a 1024px / 30-step picture &asymp; 2.9 Wh (about 3 kWh per 1000 images in published diffusion measurements)</span></td></tr>
+          <tr><td>Time (s)</td><td>units &times; {{ "%.3f"|format(method.sec) }} s &nbsp;&nbsp;<span class="muted">about 4 s for 1024px / 30 steps on a mid-range GPU; the real stopwatch time is also shown</span></td></tr>
+          <tr><td>CO&#8322; (g)</td><td>energy &times; {{ method.co2 }} g/Wh &nbsp;&nbsp;<span class="muted">India grid, about 0.7 kg per kWh</span></td></tr>
+          <tr><td>Library reuse</td><td>fixed {{ method.lookup }} Wh for reading a stored picture</td></tr>
+          <tr><td>Saving</td><td>maximum &minus; smart. With drafts, the maximum assumes <i>every</i> try would have been a full picture.</td></tr>
+        </tbody>
+      </table>
+      <p class="muted">To use measured hardware numbers, change <code>WH_PER_COMPUTE_UNIT</code> and <code>SEC_PER_COMPUTE_UNIT</code> in <code>app.py</code>.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-set">
+      <h2 id="h-set">How SmartGen saves energy: 4 layers</h2>
+      <div class="layers">
+        <div class="layer"><b>1. Purpose routing</b>Coloring, flashcard or poster: only the effort that purpose needs.</div>
+        <div class="layer"><b>2. Draft first</b>A tiny draft costs about {{ "%.2f"|format(draft_wh) }} Wh. Retries no longer cost a full picture.</div>
+        <div class="layer"><b>3. Library reuse</b>Similar picture already made? Reuse it, almost zero energy.</div>
+        <div class="layer"><b>4. Energy receipt</b>Every picture shows its energy, CO&#8322; and what was saved.</div>
+      </div>
+      <table style="margin-top:12px">
+        <thead><tr><th>Purpose</th><th>Mode</th><th>Size</th><th>Steps</th><th>Colour</th></tr></thead>
+        <tbody>
+        {% for key, p in presets.items() %}
+          <tr><td>{{ p.label }}</td><td>{{ p.mode }}</td><td>{{ p.size }}px</td><td>{{ p.steps }}</td><td>{{ "Yes" if p.color else "No" }}</td></tr>
+        {% endfor %}
+          <tr><td>{{ draft.label }}</td><td>{{ draft.mode }}</td><td>{{ draft.size }}px</td><td>{{ draft.steps }}</td><td>Yes</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <div id="panel-dash" role="tabpanel" aria-labelledby="tab-dash" hidden>
+    <div class="stage">
+      <h2>A month across the district</h2>
+      <p class="muted" style="margin-top:-6px">Watch 300 schools make requests, day by day. The lines show energy used under four setups.</p>
+      <div class="controls">
+        <label><span>Requests per school / month: <b id="o-per">30</b></span>
+          <input type="range" id="per" min="5" max="100" step="5" value="30"></label>
+        <label><span>Tries before the user is happy: <b id="o-att">2.0</b></span>
+          <input type="range" id="att" min="1" max="5" step="0.5" value="2"></label>
+        <label><span>Pictures already in the library: <b id="o-reuse">30%</b></span>
+          <input type="range" id="reuse" min="0" max="80" step="5" value="30"></label>
+        <button id="playBtn" type="button">▶ Simulate month</button>
+        <button class="ghost" id="skipBtn" type="button">⏭ Skip to end</button>
+        <select id="speed" aria-label="Speed"><option value="0.5">Slow</option><option value="1" selected>Normal</option><option value="2">Fast</option></select>
+      </div>
+
+      <div class="hero" aria-live="polite">
+        <div class="hk pct"><b id="h-pct">0%</b><span>less energy than always-maximum</span></div>
+        <div class="hk"><b id="h-kwh">0</b><span>kWh saved</span></div>
+        <div class="hk"><b id="h-co2">0</b><span>kg CO&#8322; avoided</span></div>
+        <div class="hk"><b id="h-phone">0</b><span>phone charges worth of energy</span></div>
+        <div class="hk"><b id="h-tree">0</b><span>tree-years of CO&#8322; absorption</span></div>
+      </div>
+
+      <div class="panel">
+        <h3>Energy used so far (kWh, cumulative) <span class="daylabel" id="daylabel" style="float:right"></span></h3>
+        <canvas id="chart" role="img" aria-label="Line chart of cumulative energy for four setups over one month"></canvas>
+        <div class="legend">
+          <button class="ghost small" id="zoomBtn" type="button" aria-pressed="false">🔍 Zoom in on the three smart setups</button>
+          <span><i style="background:#ff6b6b"></i>Always maximum quality (what the district did)</span>
+          <span><i style="background:#ffb347"></i>+ Purpose routing</span>
+          <span><i style="background:#5b9bff"></i>+ Draft first</span>
+          <span><i style="background:#3ddc97"></i>+ Library reuse (SmartGen)</span>
+        </div>
+      </div>
+
+      <div class="twocol">
+        <div class="panel">
+          <h3>300 schools, live</h3>
+          <canvas id="grid" role="img" aria-label="Grid of schools lighting up as they make requests"></canvas>
+          <div class="legend">
+            <span><i style="background:#5ad1a0"></i>Coloring</span>
+            <span><i style="background:#ffd166"></i>Flashcard</span>
+            <span><i style="background:#ff6b6b"></i>Poster</span>
+            <span><i style="background:transparent;border:2px solid #7fc8ff;width:8px;height:8px"></i>Reused from library</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Requests by type</h3>
+          <div class="stack" id="mixbar" aria-hidden="true"></div>
+          <div class="why" id="mixtext"></div>
+          <h3 style="margin-top:14px">Top saving schools</h3>
+          <table id="topTable"><thead><tr><th>School</th><th>Requests</th><th>Saved</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div class="panel reveal" id="whyPanel">
+        <h3>Where the savings come from</h3>
+        <div class="stack" id="savebar" aria-hidden="true"></div>
+        <div class="why" id="why1"></div>
+        <div class="why" id="why2"></div>
+        <div class="why" id="why3"></div>
+        <p class="muted" id="honest" style="margin-bottom:0"></p>
+      </div>
+      <p class="muted" id="assume" style="margin:12px 0 0"></p>
+    </div>
+  </div>
+</div>
+
+{% raw %}
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (n, d = 2) => Number(n).toLocaleString(undefined, {maximumFractionDigits: d});
+const fmtWh = n => (Math.abs(n) < 1 ? fmt(n, 3) : fmt(n, 2)) + " Wh";
+const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ------------------------------------------------------------------ tabs */
+function showTab(name) {
+  const dash = name === "dash";
+  $("panel-create").hidden = dash; $("panel-dash").hidden = !dash;
+  $("tab-create").setAttribute("aria-selected", String(!dash));
+  $("tab-dash").setAttribute("aria-selected", String(dash));
+  if (dash) { resizeCanvases(); if (!sim.data) runSim(); else draw(); }
+}
+$("tab-create").addEventListener("click", () => showTab("create"));
+$("tab-dash").addEventListener("click", () => showTab("dash"));
+
+/* ---------------------------------------------------------------- network */
+async function post(url, body) {
+  const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  let data = {};
+  try { data = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(data.error || "Server error " + r.status);
+  return data;
+}
+const newId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+function showErr(e) { $("err").textContent = (e instanceof TypeError) ? "Cannot reach the server. Is app.py running?" : e.message; }
+
+/* ------------------------------------------------ estimate -> explicit approval -> generate */
+const flow = {id:null, prompt:"", purpose:"auto", auto:true, estimate:null};
+function setBusy(b,label){[$("genBtn"),$("approveBtn"),$("againBtn"),$("upBtn")].forEach(x=>{if(x)x.disabled=b;});$("genBtn").textContent=b?(label||"Working..."):"Estimate resources";}
+function money(n){return "₹"+Number(n||0).toLocaleString("en-IN",{minimumFractionDigits:4,maximumFractionDigits:4});}
+function showEstimate(d){flow.prompt=d.prompt;flow.purpose=d.purpose;flow.auto=d.auto_detected;flow.estimate=d;$("estimatePanel").hidden=false;$("estimateReason").textContent=d.reason;$("estimatePurpose").textContent=d.settings.label;$("estEnergy").textContent=fmtWh(d.smart.energy_wh);$("estEnergyMax").textContent="Maximum quality: "+fmtWh(d.maximum.energy_wh);$("estTime").textContent=fmtS(d.smart.time_s);$("estTimeMax").textContent="Maximum quality: "+fmtS(d.maximum.time_s);$("estCost").textContent=money(d.smart.cost_inr);$("estCostMax").textContent="Maximum quality: "+money(d.maximum.cost_inr);$("estCompute").textContent=fmt(d.smart.compute);$("estComputeMax").textContent="Maximum quality: "+fmt(d.maximum.compute)+" units";$("estCo2").textContent=fmt(d.smart.co2_g,3)+" g";$("estCo2Max").textContent="Maximum quality: "+fmt(d.maximum.co2_g,3)+" g";$("estPhone").textContent=fmt(d.equivalent_phone_charge_pct,2)+"%";$("estimateSavings").textContent=d.saved_pct>0?"Compared with maximum quality: about "+d.saved_pct+"% less estimated energy, saving "+fmtWh(d.saved_energy_wh)+" and "+money(d.saved_cost_inr)+" in electricity. Tariff used: "+money(d.electricity_rate_inr_kwh)+"/kWh.":"This purpose uses maximum-quality settings, so estimated energy savings are 0%.";$("result").hidden=true;$("draftPanel").hidden=true;}
+async function start(){const prompt=$("prompt").value.trim(),purpose=$("purpose").value;$("err").textContent="";if(!prompt){$("err").textContent="Please describe the picture you need.";$("prompt").focus();return;}$("result").hidden=true;$("draftPanel").hidden=true;$("estimatePanel").hidden=true;setBusy(true,"Estimating...");try{showEstimate(await post("/estimate",{prompt,purpose}));}catch(e){showErr(e);}finally{setBusy(false);}}
+function fmtS(s){return s<1?(s*1000).toFixed(s<0.01?1:0)+" ms":s.toFixed(1)+" s";}
+async function approve(){if(!flow.estimate)return;$("err").textContent="";setBusy(true,"Generating image...");try{const d=await post("/generate",{prompt:flow.prompt,purpose:flow.purpose});$("estimatePanel").hidden=true;showFinal(d);flow.estimate=null;}catch(e){showErr(e);}finally{setBusy(false);refreshStats();}}
+function again(){$("estimatePanel").hidden=true;$("result").hidden=true;flow.estimate=null;$("err").textContent="Prompt not generated. Edit your description and select “Estimate resources” when ready.";$("prompt").focus();}
+async function upgrade(){$("err").textContent="";$("purpose").value="poster";const prompt=flow.prompt||$("prompt").value.trim();if(!prompt){$("err").textContent="Please enter a prompt first.";return;}setBusy(true,"Estimating...");try{showEstimate(await post("/estimate",{prompt,purpose:"poster"}));}catch(e){showErr(e);}finally{setBusy(false);}}
+
+const SRC = {"library": ["Reused from library", "lib"], "draft+final": ["Draft first", "df"], "final": ["Direct", "dir"]};
+
+function showFinal(d) {
+  $("result").hidden = false;
+  $("img").src = d.image; $("baseImg").src = d.baseline_image; $("dl").href = d.image;
+  const [label, cls] = SRC[d.source] || SRC["final"];
+  $("srcBadge").textContent = label; $("srcBadge").className = "badge " + cls;
+  $("reason").textContent = d.reason; $("note").textContent = d.note || "";
+  const same = d.saved_pct === 0;
+  $("baseTag").textContent = same ? "Full quality (same settings)" : "Full quality (not needed)";
+  $("upBtn").hidden = same;
+  $("rp").textContent = d.settings.label + (d.auto_detected ? " (auto-detected)" : "");
+  $("rm").textContent = d.settings.mode;
+  $("rs").textContent = d.settings.size + "px / " + d.settings.steps + " steps";
+  $("bc").textContent = fmtWh(d.baseline.energy_wh); $("sc").textContent = fmtWh(d.smart.energy_wh);
+  $("r-t1").textContent = fmtS(d.smart.time_s); $("r-t2").textContent = fmtS(d.baseline.time_s); $("r-t3").textContent = fmtS(d.saved.time_s);
+  $("measuredLine").textContent = "Measured on this server: " + fmtS(d.measured_s) + " (stopwatch). Estimates above are not meter readings; see the explanation below.";
+  $("howList").innerHTML = d.how.map(x => "<li>" + x.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</li>").join("");
+  $("r-c1").textContent = fmt(d.smart.compute); $("r-c2").textContent = fmt(d.baseline.compute); $("r-c3").textContent = fmt(d.baseline.compute - d.smart.compute);
+  $("r-e1").textContent = fmtWh(d.smart.energy_wh); $("r-e2").textContent = fmtWh(d.baseline.energy_wh); $("r-e3").textContent = fmtWh(d.saved.energy_wh);
+  $("r-o1").textContent = fmt(d.smart.co2_g, 3) + " g"; $("r-o2").textContent = fmt(d.baseline.co2_g, 3) + " g"; $("r-o3").textContent = fmt(d.saved.co2_g, 3) + " g";
+  $("sb").style.width = Math.max(1.5, 100 - d.saved_pct) + "%";
+  $("saved").textContent = d.saved_pct > 0 ? d.saved_pct + "% less energy than maximum quality" : "Poster needs full quality, so no saving here";
+}
+
+async function refreshStats() {
+  try {
+    const d = await (await fetch("/stats")).json();
+    $("k-req").textContent = d.requests; $("k-save").textContent = d.saved_pct + "%";
+    $("k-cost").textContent = fmtWh(d.saved_wh); $("k-co2").textContent = fmt(d.saved_co2_g);
+    $("k-reuse").textContent = d.reused + " / " + d.drafts;
+  } catch (e) {}
+}
+
+$("genBtn").addEventListener("click", start);
+$("approveBtn").addEventListener("click", approve);
+$("againBtn").addEventListener("click", again);
+$("upBtn").addEventListener("click", upgrade);
+$("resetBtn").addEventListener("click", async () => { await post("/stats/reset", {}); $("result").hidden = true; $("draftPanel").hidden = true; $("estimatePanel").hidden = true; refreshStats(); });
+$("prompt").addEventListener("keydown", e => { if (e.key === "Enter") start(); });
+document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => { $("prompt").value = c.dataset.p; $("purpose").value = "auto"; start(); }));
+
+/* ===================================================== district dashboard */
+const COL = {a: "#ff6b6b", b: "#ffb347", c: "#5b9bff", d: "#3ddc97"};
+const NAMES = {a: "Always maximum", b: "+ Routing", c: "+ Draft first", d: "SmartGen"};
+const TIER_COL = ["#5ad1a0", "#ffd166", "#ff6b6b"];
+const sim = {zoom: false, data: null, t: 0, playing: false, last: 0, lastDay: -1, glow: null, glowCol: null, glowHit: null, loading: false};
+
+["per", "att", "reuse"].forEach(id => $(id).addEventListener("input", () => {
+  $("o-per").textContent = $("per").value; $("o-att").textContent = Number($("att").value).toFixed(1); $("o-reuse").textContent = $("reuse").value + "%";
+}));
+$("per").addEventListener("change", runSim); $("att").addEventListener("change", runSim); $("reuse").addEventListener("change", runSim);
+$("zoomBtn").addEventListener("click", () => {
+  sim.zoom = !sim.zoom; $("zoomBtn").setAttribute("aria-pressed", String(sim.zoom));
+  $("zoomBtn").textContent = sim.zoom ? "↩ Show all four lines" : "🔍 Zoom in on the three smart setups"; draw();
+});
+$("playBtn").addEventListener("click", () => { if (sim.data && sim.playing) { sim.playing = false; $("playBtn").textContent = "▶ Resume"; } else if (sim.data && sim.t > 0 && sim.t < sim.data.days) { sim.playing = true; sim.last = 0; $("playBtn").textContent = "⏸ Pause"; requestAnimationFrame(tick); } else runSim(); });
+$("skipBtn").addEventListener("click", () => { if (!sim.data) return; sim.t = sim.data.days; sim.playing = false; $("playBtn").textContent = "↻ Replay"; applyEvents(sim.data.days - 1, true); draw(); finish(); });
+
+async function runSim() {
+  if (sim.loading) return; sim.loading = true;
+  $("playBtn").disabled = true; $("playBtn").textContent = "Simulating...";
+  try {
+    const d = await post("/simulate_month", {schools: 300, per_school: Number($("per").value), avg_attempts: Number($("att").value), reuse_pct: Number($("reuse").value)});
+    sim.data = d; sim.t = 0; sim.lastDay = -1;
+    sim.glow = new Float32Array(d.schools); sim.glowCol = new Uint8Array(d.schools); sim.glowHit = new Uint8Array(d.schools);
+    $("whyPanel").classList.remove("on");
+    resizeCanvases(); setStatic(d);
+    if (reduceMotion) { sim.t = d.days; applyEvents(d.days - 1, true); draw(); finish(); $("playBtn").textContent = "↻ Replay"; }
+    else { sim.playing = true; sim.last = 0; $("playBtn").textContent = "⏸ Pause"; requestAnimationFrame(tick); }
+  } catch (e) { $("daylabel").textContent = e.message; }
+  finally { sim.loading = false; $("playBtn").disabled = false; }
+}
+
+function valAt(arr, t, days) {
+  if (t <= 0) return 0; if (t >= days) return arr[days - 1];
+  const i = Math.floor(t), prev = i === 0 ? 0 : arr[i - 1];
+  return prev + (arr[i] - prev) * (t - i);
+}
+
+function applyEvents(day, all) {
+  const d = sim.data; const from = all ? 0 : sim.lastDay + 1;
+  for (let k = from; k <= day; k++) for (const v of d.events[k]) {
+    const s = v >> 3; sim.glow[s] = 1; sim.glowCol[s] = (v >> 1) & 3; sim.glowHit[s] = v & 1;
+  }
+  sim.lastDay = day;
+}
+
+function tick(ts) {
+  if (!sim.playing) return;
+  const d = sim.data; if (!sim.last) sim.last = ts;
+  const dt = Math.min(0.1, (ts - sim.last) / 1000); sim.last = ts;
+  sim.t = Math.min(d.days, sim.t + dt * (d.days / 12) * Number($("speed").value));
+  const day = Math.min(d.days - 1, Math.floor(sim.t));
+  if (day > sim.lastDay) applyEvents(day, false);
+  for (let i = 0; i < sim.glow.length; i++) sim.glow[i] = Math.max(0, sim.glow[i] - dt * 0.9);
+  draw();
+  if (sim.t >= d.days) { sim.playing = false; $("playBtn").textContent = "↻ Replay"; finish(); return; }
+  requestAnimationFrame(tick);
+}
+
+/* ---- canvases ---- */
+let CW = {};
+function fit(c) {
+  const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  c.width = Math.max(1, Math.round(r.width * dpr)); c.height = Math.max(1, Math.round(r.height * dpr));
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); return {g, w: r.width, h: r.height};
+}
+function resizeCanvases() { if ($("panel-dash").hidden) return; CW.chart = fit($("chart")); CW.grid = fit($("grid")); if (sim.data) draw(); }
+window.addEventListener("resize", resizeCanvases);
+
+function draw() { if (!sim.data || !CW.chart) return; drawChart(); drawGrid(); updateHero(); }
+
+function drawChart() {
+  const {g, w, h} = CW.chart, d = sim.data, t = sim.t, days = d.days, cum = d.cumulative_kwh;
+  g.clearRect(0, 0, w, h);
+  const L = 46, R = w < 560 ? 70 : 130, T = 14, B = 28, pw = w - L - R, ph = h - T - B;
+  const keys = sim.zoom ? ["b", "c", "d"] : ["a", "b", "c", "d"], top = sim.zoom ? "b" : "a", low = "d";
+  const maxV = Math.max(...cum[top]) * 1.08;
+  const X = x => L + (x / days) * pw, Y = v => T + ph - (v / maxV) * ph;
+  g.font = "11px system-ui, sans-serif"; g.textBaseline = "middle";
+  const steps = 4, rough = maxV / steps, mag = Math.pow(10, Math.floor(Math.log10(rough))), nice = Math.ceil(rough / mag) * mag;
+  for (let i = 0; i <= steps; i++) {
+    const v = i * nice; if (v > maxV * 1.02) break;
+    g.strokeStyle = "rgba(160,180,230,.14)"; g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(L + pw, Y(v)); g.stroke();
+    g.fillStyle = "#93a0c0"; g.textAlign = "right"; g.fillText(fmt(v, nice < 10 ? 1 : 0), L - 6, Y(v));
+  }
+  g.textAlign = "center"; g.textBaseline = "top";
+  for (let x = 0; x <= days; x += 5) { g.fillStyle = "#93a0c0"; g.fillText(x === 0 ? "Day 0" : String(x), X(x), T + ph + 8); }
+  const path = k => { const out = [[0, 0]]; const last = Math.floor(t); for (let i = 1; i <= last && i <= days; i++) out.push([i, cum[k][i - 1]]); if (t < days) out.push([t, valAt(cum[k], t, days)]); return out; };
+  // shaded gap between "always maximum" and SmartGen = energy saved
+  const pa = path(top), pd = path(low);
+  g.beginPath(); pa.forEach(([x, v], i) => i ? g.lineTo(X(x), Y(v)) : g.moveTo(X(x), Y(v)));
+  for (let i = pd.length - 1; i >= 0; i--) g.lineTo(X(pd[i][0]), Y(pd[i][1]));
+  g.closePath(); g.fillStyle = "rgba(61,220,151,.13)"; g.fill();
+  const ends = [];
+  for (const k of keys) {
+    const p = path(k); g.strokeStyle = COL[k]; g.lineWidth = k === "d" ? 3.2 : 2.2; g.lineJoin = "round";
+    g.beginPath(); p.forEach(([x, v], i) => i ? g.lineTo(X(x), Y(v)) : g.moveTo(X(x), Y(v))); g.stroke();
+    const e = p[p.length - 1]; ends.push({k, x: X(e[0]), y: Y(e[1]), v: e[1]});
+    g.fillStyle = COL[k]; g.beginPath(); g.arc(X(e[0]), Y(e[1]), 4, 0, 7); g.fill();
+  }
+  const names = R > 100, gap = names ? 28 : 15, bottom = T + ph + 4;
+  ends.sort((p, q) => p.y - q.y);                                  // keep labels from overlapping
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < gap) ends[i].y = ends[i - 1].y + gap;
+  if (ends[ends.length - 1].y > bottom) {                          // too low: stack upwards from the bottom
+    ends[ends.length - 1].y = bottom;
+    for (let i = ends.length - 2; i >= 0; i--) if (ends[i + 1].y - ends[i].y < gap) ends[i].y = ends[i + 1].y - gap;
+  }
+  g.textAlign = "left"; g.textBaseline = "middle";
+  for (const e of ends) {
+    g.font = "bold 11px system-ui, sans-serif"; g.fillStyle = COL[e.k]; g.fillText(fmt(e.v, 1) + " kWh", e.x + 9, e.y - (names ? 6 : 0));
+    if (names) { g.font = "11px system-ui, sans-serif"; g.fillStyle = "#b7c2de"; g.fillText(NAMES[e.k], e.x + 9, e.y + 7); }
+  }
+}
+
+function gridLayout(w, h, n) {
+  const cols = Math.ceil(Math.sqrt(n * w / h)), rows = Math.ceil(n / cols), cell = Math.min(w / cols, h / rows);
+  return {cols, rows, cell, ox: (w - cols * cell) / 2, oy: (h - rows * cell) / 2};
+}
+function drawGrid() {
+  const {g, w, h} = CW.grid, d = sim.data, n = d.schools, L = gridLayout(w, h, n);
+  g.clearRect(0, 0, w, h);
+  for (let i = 0; i < n; i++) {
+    const cx = L.ox + (i % L.cols + 0.5) * L.cell, cy = L.oy + (Math.floor(i / L.cols) + 0.5) * L.cell, r = L.cell * 0.34;
+    g.fillStyle = "#1c2850"; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+    const a = sim.glow[i];
+    if (a > 0.02) {
+      g.globalAlpha = Math.min(1, a * 1.2); g.fillStyle = TIER_COL[sim.glowCol[i]];
+      g.beginPath(); g.arc(cx, cy, r * (1 + a * 0.5), 0, 7); g.fill();
+      if (sim.glowHit[i]) { g.strokeStyle = "#7fc8ff"; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, r * 1.7 * (1 + (1 - a) * 0.3), 0, 7); g.stroke(); }
+      g.globalAlpha = 1;
+    }
+  }
+}
+
+function updateHero() {
+  const d = sim.data, t = sim.t, c = d.cumulative_kwh, f = d.factors;
+  const saved = valAt(c.a, t, d.days) - valAt(c.d, t, d.days), base = valAt(c.a, t, d.days);
+  const co2 = saved * f.co2_kg_per_kwh;
+  $("h-pct").textContent = (base > 0 ? fmt(saved / base * 100, 1) : "0") + "%";
+  $("h-kwh").textContent = fmt(saved, 1); $("h-co2").textContent = fmt(co2, 1);
+  $("h-phone").textContent = fmt(Math.floor(saved * 1000 / f.phone_wh), 0);
+  $("h-tree").textContent = fmt(co2 / f.tree_kg_per_year, 1);
+  const day = Math.min(d.days, Math.max(1, Math.ceil(t)));
+  let n = 0; for (let k = 0; k < Math.min(day, d.days); k++) n += d.events[k].length;
+  $("daylabel").textContent = "Day " + day + " of " + d.days + " · " + fmt(n, 0) + " requests so far";
+}
+
+function setStatic(d) {
+  const tc = d.tier_counts, tot = tc.coloring + tc.flashcard + tc.poster || 1;
+  const parts = [["coloring", TIER_COL[0], "Coloring"], ["flashcard", TIER_COL[1], "Flashcard"], ["poster", TIER_COL[2], "Poster"]];
+  $("mixbar").innerHTML = parts.map(([k, c]) => '<div style="width:' + (tc[k] / tot * 100) + '%;background:' + c + '"></div>').join("");
+  $("mixtext").innerHTML = parts.map(([k, c, n]) => '<span style="margin-right:12px"><i style="background:' + c + '"></i>' + n + ' ' + fmt(tc[k], 0) + ' (' + fmt(tc[k] / tot * 100, 0) + '%)</span>').join("");
+  $("topTable").querySelector("tbody").innerHTML = "";
+  const a = d.assumptions;
+  $("assume").textContent = "Assumptions (adjust with the sliders): " + d.schools + " schools, " + a.per_school + " requests each per month, " +
+    a.avg_attempts + " tries per picture on average, " + a.reuse_pct + "% of requests find a similar picture in the library once it fills up (it fills over the first 10 days). " +
+    "Energy is an estimate: max-quality poster " + a.poster_wh + " Wh, coloring page " + a.tier_wh.coloring + " Wh, flashcard " + a.tier_wh.flashcard + " Wh, draft " + a.draft_wh + " Wh. A baseline tool makes a full poster on every try.";
+  draw();
+}
+
+function finish() {
+  const d = sim.data; updateHero();
+  $("topTable").querySelector("tbody").innerHTML = d.top_schools.map(s =>
+    "<tr><td>" + s.name + "</td><td>" + s.requests + "</td><td>" + fmt(s.saved_kwh, 2) + " kWh (" + s.saved_pct + "%)</td></tr>").join("");
+  const b = d.breakdown_kwh, total = Math.max(0.0001, Math.max(0, b.routing) + Math.max(0, b.draft) + Math.max(0, b.reuse));
+  const seg = [["routing", COL.b], ["draft", COL.c], ["reuse", COL.d]];
+  $("savebar").innerHTML = seg.map(([k, c]) => '<div style="width:' + Math.max(0, b[k]) / total * 100 + '%;background:' + c + '"></div>').join("");
+  const row = (c, name, v, txt) => '<i style="background:' + c + '"></i><b>' + name + ': ' + fmt(v, 1) + ' kWh</b> ' + txt;
+  $("why1").innerHTML = row(COL.b, "Purpose routing", b.routing, "- each picture gets only the effort its purpose needs.");
+  $("why2").innerHTML = row(COL.c, "Draft first", b.draft, "- a retry costs a tiny draft instead of a full poster.");
+  $("why3").innerHTML = row(COL.d, "Library reuse", b.reuse, "- similar pictures are reused, not generated again (" + fmt(d.reused, 0) + " reused this month).");
+  $("honest").textContent = b.draft < 0
+    ? "Honest note: when people rarely retry, drafts cost slightly more than they save. Routing and reuse still pay off."
+    : "Routing does most of the work. Drafts pay off when people retry, and reuse grows as the library fills.";
+  $("whyPanel").classList.add("on");
+}
+
+$("tab-create").setAttribute("tabindex", "0");
+refreshStats();
+</script>
+{% endraw %}
+</body>
+</html>
